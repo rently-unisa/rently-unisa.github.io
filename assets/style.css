@@ -810,3 +810,7 @@ pre[class*="language-"] {
 .token.italic {
 	font-style: italic;
 }
+
+ul {
+	list-style-type: none;
+}
