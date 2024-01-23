@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GestioneAnnuncioServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back-end</a> &gt; <a href="index.source.html" class="el_package">it.unisa.c02.rently.rently_application.business.gestioneAnnuncio.service</a> &gt; <span class="el_source">GestioneAnnuncioServiceImpl.java</span></div><h1>GestioneAnnuncioServiceImpl.java</h1><pre class="source lang-java linenums">package it.unisa.c02.rently.rently_application.business.gestioneAnnuncio.service;
+
+import it.unisa.c02.rently.rently_application.data.dao.GestioneAnnuncioDAO;
+import it.unisa.c02.rently.rently_application.data.model.Annuncio;
+import it.unisa.c02.rently.rently_application.data.model.Utente;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Implementazione del servizio di gestione degli annunci.
+ * Questa classe fornisce implementazioni concrete per i metodi dichiarati nell'interfaccia GestioneAnnuncioService.
+ */
+@Service
+<span class="fc" id="L17">@RequiredArgsConstructor</span>
+public class GestioneAnnuncioServiceImpl implements GestioneAnnuncioService {
+
+    /**
+     * Istanza di GestioneAnnuncioDAO utilizzata per l'accesso ai dati degli annunci.
+     */
+    private final GestioneAnnuncioDAO gestioneAnnuncioDAO;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional&lt;Annuncio&gt; getAnnuncio(final long id) {
+<span class="nc" id="L30">        return gestioneAnnuncioDAO.findById(id);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Annuncio updateAnnuncio(Annuncio annuncio) {
+<span class="nc" id="L38">        return gestioneAnnuncioDAO.save(annuncio);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Annuncio addAnnuncio(final Annuncio annuncio) {
+<span class="nc" id="L46">        return gestioneAnnuncioDAO.save(annuncio);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean deleteAnnuncio(final Long id) {
+<span class="nc" id="L54">        var item = gestioneAnnuncioDAO.findById(id);</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if(item.isEmpty()) {</span>
+<span class="nc" id="L56">            return false;</span>
+        }
+
+<span class="nc" id="L59">        gestioneAnnuncioDAO.deleteById(id);</span>
+<span class="nc" id="L60">        return false;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List&lt;Annuncio&gt; findAllByUtente(Utente utente) {
+<span class="nc" id="L68">        return gestioneAnnuncioDAO.findByUtente(utente);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

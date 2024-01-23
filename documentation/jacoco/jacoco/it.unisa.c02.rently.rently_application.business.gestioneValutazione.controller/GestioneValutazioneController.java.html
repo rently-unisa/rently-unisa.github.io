@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GestioneValutazioneController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back-end</a> &gt; <a href="index.source.html" class="el_package">it.unisa.c02.rently.rently_application.business.gestioneValutazione.controller</a> &gt; <span class="el_source">GestioneValutazioneController.java</span></div><h1>GestioneValutazioneController.java</h1><pre class="source lang-java linenums">package it.unisa.c02.rently.rently_application.business.gestioneValutazione.controller;
+import it.unisa.c02.rently.rently_application.business.gestioneAnnuncio.service.GestioneAnnuncioService;
+import it.unisa.c02.rently.rently_application.business.gestioneAreaPersonale.service.GestioneAreaPersonaleService;
+import it.unisa.c02.rently.rently_application.business.gestioneNoleggio.service.GestioneNoleggioService;
+import it.unisa.c02.rently.rently_application.business.gestioneValutazione.service.GestioneValutazioneService;
+import it.unisa.c02.rently.rently_application.commons.services.regexService.RegexTester;
+import it.unisa.c02.rently.rently_application.commons.services.responseService.ResponseService;
+import it.unisa.c02.rently.rently_application.data.dto.ResponseDTO;
+import it.unisa.c02.rently.rently_application.data.dto.ValutazioneDTO;
+import it.unisa.c02.rently.rently_application.data.model.Annuncio;
+import it.unisa.c02.rently.rently_application.data.model.Utente;
+import it.unisa.c02.rently.rently_application.data.model.ValutazioneOggetto;
+import it.unisa.c02.rently.rently_application.data.model.ValutazioneUtente;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+/**
+ * Questa classe gestisce le richieste relative alle valutazioni degli utenti e degli oggetti attraverso i servizi forniti da
+ * GestioneValutazioneService, GestioneAreaPersonaleService, GestioneAnnuncioService e GestioneNoleggioService.
+ * Fornisce endpoint RESTful per aggiungere, visualizzare e calcolare medie delle valutazioni.
+ * Le risposte sono gestite utilizzando il servizio ResponseService per costruire risposte standardizzate in formato JSON.
+ */
+@RestController
+<span class="fc" id="L29">@RequiredArgsConstructor</span>
+@RequestMapping(&quot;/api/valutazione&quot;)
+@CrossOrigin(
+        origins = {
+                &quot;*&quot;,
+        },
+        methods = {
+                RequestMethod.OPTIONS,
+                RequestMethod.GET,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.POST
+        })
+public class GestioneValutazioneController {
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneValutazioneService valutazioneService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneAreaPersonaleService areaPersonaleService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneAnnuncioService annuncioService;
+
+    /**
+     * Service per la gestione delle risposte alle richieste.
+     */
+    private final ResponseService responseService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneNoleggioService noleggioService;
+
+    /**
+     * Endpoint per aggiungere una valutazione di un utente.
+     *
+     * @param valutazioneDTO Dati della valutazione dell'utente.
+     * @return ResponseEntity contenente l'esito dell'operazione.
+     */
+    @PostMapping(&quot;/aggiungi-valutazione-utente&quot;)
+    public ResponseEntity&lt;String&gt; aggiungiValutazioneUtente(@RequestBody ValutazioneDTO valutazioneDTO) {
+
+<span class="fc" id="L78">        ResponseDTO message = new ResponseDTO();</span>
+<span class="fc" id="L79">        message.message = &quot;Errore durante l'inserimento dei dati&quot;;</span>
+
+<span class="fc" id="L81">        HashMap&lt;String, String&gt; tester = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L82">        tester.put(valutazioneDTO.getDescrizione(), &quot;^[\\sa-zA-Z0-9.,:;'-?!èéòàùì]{1,255}$&quot;);</span>
+
+<span class="fc" id="L84">        RegexTester regexTester = new RegexTester();</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (!regexTester.toTest(tester)) {</span>
+<span class="fc" id="L86">            return responseService.InternalError(message);</span>
+        }
+
+<span class="fc" id="L89">        ValutazioneUtente valutazione = new ValutazioneUtente();</span>
+<span class="fc" id="L90">        Utente utente = areaPersonaleService.getDatiPrivati(valutazioneDTO.getValutatore());</span>
+<span class="fc" id="L91">        valutazione.setValutatore(utente);</span>
+<span class="fc" id="L92">        valutazione.setDescrizione(valutazioneDTO.getDescrizione());</span>
+<span class="fc" id="L93">        valutazione.setValutato(areaPersonaleService.getDatiPrivati(valutazioneDTO.getValutato()));</span>
+<span class="fc" id="L94">        valutazione.setNoleggio(noleggioService.getNoleggio(valutazioneDTO.getNoleggio()));</span>
+<span class="pc bpc" id="L95" title="1 of 4 branches missed.">        if(valutazioneDTO.getVoto() &gt;= 0 &amp;&amp; valutazioneDTO.getVoto() &lt;= 10){</span>
+<span class="fc" id="L96">            valutazione.setVoto(valutazioneDTO.getVoto());</span>
+        } else{
+<span class="fc" id="L98">            return responseService.InternalError();</span>
+        }
+
+<span class="pc bpc" id="L101" title="3 of 6 branches missed.">        if(valutazione.getValutato()!= null &amp;&amp; valutazione.getValutatore()!= null &amp;&amp; valutazione.getNoleggio() != null){</span>
+<span class="fc" id="L102">            valutazione = valutazioneService.addValutazioneUtente(valutazione);</span>
+<span class="fc" id="L103">            ValutazioneDTO item = new ValutazioneDTO().convertFromValutazioneUtente(valutazione);</span>
+<span class="fc" id="L104">            return responseService.Ok(item);</span>
+        }
+        else
+<span class="nc" id="L107">            return responseService.InternalError();</span>
+    }
+
+    /**
+     * Endpoint per visualizzare le valutazioni di un utente.
+     *
+     * @param valutato Identificativo dell'utente valutato.
+     * @return ResponseEntity contenente la lista delle valutazioni dell'utente nel formato JSON.
+     */
+    @GetMapping(&quot;/visualizza-valutazioni-utente&quot;)
+    public ResponseEntity&lt;String&gt; visualizzaValutazioniUtente(@RequestParam long valutato){
+
+<span class="nc" id="L119">        Utente utente = areaPersonaleService.getDatiPrivati(valutato);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if(utente!= null){</span>
+<span class="nc" id="L121">            List&lt;ValutazioneUtente&gt; valutazioni = valutazioneService.findAllByUtente(utente);</span>
+<span class="nc" id="L122">            List&lt;ValutazioneDTO&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">            for (ValutazioneUtente vu: valutazioni) {</span>
+<span class="nc" id="L124">                ValutazioneDTO item = new ValutazioneDTO().convertFromValutazioneUtente(vu);</span>
+<span class="nc" id="L125">                list.add(item);</span>
+<span class="nc" id="L126">            }</span>
+<span class="nc" id="L127">            return responseService.Ok(list);</span>
+        }
+        else
+<span class="nc" id="L130">            return responseService.InternalError();</span>
+    }
+
+    /**
+     * Endpoint per visualizzare la media delle valutazioni di un utente.
+     *
+     * @param valutato Identificativo dell'utente valutato.
+     * @return ResponseEntity contenente la media delle valutazioni dell'utente nel formato JSON.
+     */
+    @GetMapping(&quot;/visualizza-media-valutazioni-utente&quot;)
+    public ResponseEntity&lt;String&gt; visualizzaMediaValutazioniUtente(@RequestParam long valutato){
+
+<span class="nc" id="L142">        Utente utente = areaPersonaleService.getDatiPrivati(valutato);</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if(utente!= null){</span>
+<span class="nc" id="L144">            double media = valutazioneService.mediaValutazioniUtenteByUtente(utente);</span>
+<span class="nc" id="L145">            return responseService.Ok(media);</span>
+        }
+        else
+<span class="nc" id="L148">            return responseService.InternalError();</span>
+    }
+
+    /**
+     * Endpoint per aggiungere una valutazione di un annuncio.
+     *
+     * @param valutazioneDTO Dati della valutazione dell'annuncio.
+     * @return ResponseEntity contenente l'esito dell'operazione.
+     */
+    @PostMapping(&quot;/aggiungi-valutazione-oggetto&quot;)
+    public ResponseEntity&lt;String&gt; aggiungiValutazioneOggetto(@RequestBody ValutazioneDTO valutazioneDTO) {
+
+<span class="nc" id="L160">        ResponseDTO message = new ResponseDTO();</span>
+<span class="nc" id="L161">        message.message = &quot;Errore durante l'inserimento dei dati&quot;;</span>
+
+<span class="nc" id="L163">        HashMap&lt;String, String&gt; tester = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L164">        tester.put(valutazioneDTO.getDescrizione(), &quot;^[\\sa-zA-Z0-9.,:;'-?!]{1,255}$&quot;);</span>
+
+<span class="nc" id="L166">        RegexTester regexTester = new RegexTester();</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if (!regexTester.toTest(tester)) {</span>
+<span class="nc" id="L168">            return responseService.InternalError(message);</span>
+        }
+
+<span class="nc" id="L171">        ValutazioneOggetto valutazione = new ValutazioneOggetto();</span>
+<span class="nc" id="L172">        Utente utente = areaPersonaleService.getDatiPrivati(valutazioneDTO.getValutatore());</span>
+<span class="nc" id="L173">        valutazione.setValutatore(utente);</span>
+<span class="nc" id="L174">        valutazione.setDescrizione(valutazioneDTO.getDescrizione());</span>
+<span class="nc" id="L175">        valutazione.setAnnuncio(annuncioService.getAnnuncio(valutazioneDTO.getValutato()).orElse(null));</span>
+<span class="nc" id="L176">        valutazione.setNoleggio(noleggioService.getNoleggio(valutazioneDTO.getNoleggio()));</span>
+<span class="nc bnc" id="L177" title="All 4 branches missed.">        if(valutazioneDTO.getVoto() &gt;= 0 &amp;&amp; valutazioneDTO.getVoto() &lt;= 10){</span>
+<span class="nc" id="L178">            valutazione.setVoto(valutazioneDTO.getVoto());</span>
+        } else{
+<span class="nc" id="L180">            return responseService.InternalError();</span>
+        }
+
+<span class="nc bnc" id="L183" title="All 6 branches missed.">        if(valutazione.getAnnuncio()!= null &amp;&amp; valutazione.getValutatore()!= null &amp;&amp; valutazione.getNoleggio() != null){</span>
+<span class="nc" id="L184">            valutazione = valutazioneService.addValutazioneOggetto(valutazione);</span>
+<span class="nc" id="L185">            return responseService.Ok(valutazione);</span>
+        }
+        else
+<span class="nc" id="L188">            return responseService.InternalError();</span>
+    }
+
+    /**
+     * Endpoint per visualizzare le valutazioni di un annuncio.
+     *
+     * @param id Identificativo dell'annuncio.
+     * @return ResponseEntity contenente la lista delle valutazioni dell'annuncio nel formato JSON.
+     */
+    @GetMapping(&quot;/visualizza-valutazioni-annuncio&quot;)
+    public ResponseEntity&lt;String&gt; visualizzaValutazioniAnnuncio(@RequestParam long id){
+
+<span class="nc" id="L200">        Annuncio annuncio = annuncioService.getAnnuncio(id).orElse(null);</span>
+
+<span class="nc" id="L202">        List&lt;ValutazioneDTO&gt; list = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        if(annuncio!= null){</span>
+<span class="nc" id="L205">            List&lt;ValutazioneOggetto&gt; valutazioni = valutazioneService.findAllByAnnuncio(annuncio);</span>
+<span class="nc" id="L206">            list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            for (ValutazioneOggetto vo: valutazioni) {</span>
+<span class="nc" id="L208">                ValutazioneDTO item = new ValutazioneDTO().convertFromValutazioneOggetto(vo);</span>
+<span class="nc" id="L209">                list.add(item);</span>
+<span class="nc" id="L210">            }</span>
+        }
+<span class="nc" id="L212">        return responseService.Ok(list);</span>
+    }
+
+    /**
+     * Endpoint per visualizzare la media delle valutazioni di un annuncio.
+     *
+     * @param id Identificativo dell'annuncio.
+     * @return ResponseEntity contenente la media delle valutazioni dell'annuncio nel formato JSON.
+     */
+    @GetMapping(&quot;/visualizza-media-valutazioni-annuncio&quot;)
+    public ResponseEntity&lt;String&gt; visualizzaMediaValutazioniOggetto(@RequestParam long id){
+
+<span class="nc" id="L224">        Annuncio annuncio = annuncioService.getAnnuncio(id).orElse(null);</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        if(annuncio!= null){</span>
+<span class="nc" id="L226">            double media = valutazioneService.mediaValutazioniOggettoByAnnuncio(annuncio);</span>
+<span class="nc" id="L227">            return responseService.Ok(media);</span>
+        }
+        else
+<span class="nc" id="L230">            return responseService.InternalError();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

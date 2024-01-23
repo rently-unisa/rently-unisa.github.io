@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GestioneChatController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back-end</a> &gt; <a href="index.source.html" class="el_package">it.unisa.c02.rently.rently_application.business.gestioneChat.controller</a> &gt; <span class="el_source">GestioneChatController.java</span></div><h1>GestioneChatController.java</h1><pre class="source lang-java linenums">package it.unisa.c02.rently.rently_application.business.gestioneChat.controller;
+
+import it.unisa.c02.rently.rently_application.business.gestioneAreaPersonale.service.GestioneAreaPersonaleService;
+import it.unisa.c02.rently.rently_application.business.gestioneChat.service.GestioneChatService;
+import it.unisa.c02.rently.rently_application.commons.services.regexService.RegexTester;
+import it.unisa.c02.rently.rently_application.commons.services.responseService.ResponseService;
+import it.unisa.c02.rently.rently_application.data.dto.MessaggioDTO;
+import it.unisa.c02.rently.rently_application.data.dto.ResponseDTO;
+import it.unisa.c02.rently.rently_application.data.model.Messaggio;
+import it.unisa.c02.rently.rently_application.data.model.Utente;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+
+/**
+ * Questa classe gestisce le richieste relative ai messaggi attraverso i servizi forniti da
+ * GestioneChatService, GestioneAreaPersonaleService e ResponseService.
+ * Fornisce endpoint RESTful per aggiungere e visualizzare i messaggi.
+ * Le risposte sono gestite utilizzando il servizio ResponseService per costruire risposte standardizzate in formato JSON.
+ */
+
+@RestController
+<span class="fc" id="L29">@RequiredArgsConstructor</span>
+@RequestMapping(&quot;/api/chat&quot;)
+@CrossOrigin(
+        origins = {
+                &quot;*&quot;,
+        },
+        methods = {
+                RequestMethod.OPTIONS,
+                RequestMethod.GET,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.POST
+        })
+public class GestioneChatController {
+
+        /**
+         * Service per effettuare le operazioni di persistenza.
+         */
+        private final GestioneAreaPersonaleService areaPersonaleService;
+
+        /**
+         * Service per la gestione delle risposte alle richieste.
+         */
+        private final ResponseService responseService;
+
+        /**
+         * Service per effettuare le operazioni di persistenza.
+         */
+        private final GestioneChatService chatService;
+
+
+        /**
+         * Endpoint per aggiungere un messaggio.
+         *
+         * @param messaggioDTO Dati del messaggio da aggiungere.
+         * @return ResponseEntity contenente l'esito dell'operazione.
+         */
+
+        @PostMapping(&quot;/aggiungi-messaggio&quot;)
+        public ResponseEntity&lt;String&gt; aggiungiMessaggio(@RequestBody MessaggioDTO messaggioDTO) {
+
+<span class="fc" id="L70">                ResponseDTO message = new ResponseDTO();</span>
+<span class="fc" id="L71">                message.message = &quot;Il contenuto del messaggio è sbagliato&quot;;</span>
+
+<span class="fc" id="L73">                HashMap&lt;String, String&gt; tester = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L74">                tester.put(messaggioDTO.getDescrizione(), &quot;^[\\W\\sa-zA-Z0-9.,:;'-_èéòàìù]{1,2000}$&quot;);</span>
+
+<span class="fc" id="L76">                RegexTester regexTester = new RegexTester();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if (!regexTester.toTest(tester)) {</span>
+<span class="fc" id="L78">                        return responseService.InternalError(message);</span>
+                }
+
+<span class="fc" id="L81">                Messaggio messaggio = new Messaggio();</span>
+<span class="fc" id="L82">                Utente mittente = areaPersonaleService.getDatiPrivati(messaggioDTO.getMittente());</span>
+<span class="fc" id="L83">                Utente destinatario = areaPersonaleService.getDatiPrivati(messaggioDTO.getDestinatario());</span>
+
+<span class="fc" id="L85">                messaggio.setDestinatario(destinatario);</span>
+<span class="fc" id="L86">                messaggio.setMittente(mittente);</span>
+<span class="fc" id="L87">                messaggio.setDescrizione(messaggioDTO.getDescrizione());</span>
+<span class="fc" id="L88">                messaggio.setOrarioInvio(Timestamp.valueOf(messaggioDTO.getOrarioInvio()));</span>
+
+<span class="pc bpc" id="L90" title="1 of 4 branches missed.">                if(messaggio.getDestinatario()!= null &amp;&amp; messaggio.getMittente()!= null){</span>
+<span class="fc" id="L91">                        messaggio = chatService.addMessaggio(messaggio);</span>
+<span class="fc" id="L92">                        MessaggioDTO messaggioItem = new MessaggioDTO().convertFromModel(messaggio);</span>
+
+<span class="fc" id="L94">                        return responseService.Ok(messaggioItem);</span>
+                }
+                else
+<span class="fc" id="L97">                        return responseService.InternalError();</span>
+        }
+
+        /**
+         * Endpoint per visualizzare una chat tra due utenti.
+         *
+         * @param messaggioDTO contiene gli id degli utenti di cui visualizzare la chat.
+         * @return ResponseEntity contenente l'esito dell'operazione.
+         */
+        @PostMapping(&quot;/visualizza-chat&quot;)
+        public ResponseEntity&lt;String&gt; getChat (@RequestBody MessaggioDTO messaggioDTO){
+
+<span class="nc" id="L109">                Utente dest = areaPersonaleService.getDatiPrivati(messaggioDTO.getDestinatario());</span>
+<span class="nc" id="L110">                Utente mitt = areaPersonaleService.getDatiPrivati(messaggioDTO.getMittente());</span>
+
+<span class="nc" id="L112">                List&lt;Messaggio&gt; chat = chatService.getChat(dest, mitt);</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                if(chat != null) {</span>
+<span class="nc" id="L114">                        List&lt;MessaggioDTO&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                        for (Messaggio m : chat) {</span>
+<span class="nc" id="L116">                                MessaggioDTO item = new MessaggioDTO().convertFromModel(m);</span>
+<span class="nc" id="L117">                                list.add(item);</span>
+<span class="nc" id="L118">                        }</span>
+<span class="nc" id="L119">                        return responseService.Ok(list);</span>
+                }else
+<span class="nc" id="L121">                        return responseService.InternalError();</span>
+        }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

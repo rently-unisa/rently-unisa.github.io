@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GestioneAutenticazioneController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back-end</a> &gt; <a href="index.source.html" class="el_package">it.unisa.c02.rently.rently_application.business.gestioneAutenticazione.controller</a> &gt; <span class="el_source">GestioneAutenticazioneController.java</span></div><h1>GestioneAutenticazioneController.java</h1><pre class="source lang-java linenums">package it.unisa.c02.rently.rently_application.business.gestioneAutenticazione.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import it.unisa.c02.rently.rently_application.business.gestioneAutenticazione.service.GestioneAutenticazioneService;
+import it.unisa.c02.rently.rently_application.commons.psw.PswCoder;
+import it.unisa.c02.rently.rently_application.commons.services.regexService.RegexTester;
+import it.unisa.c02.rently.rently_application.commons.services.responseService.ResponseService;
+import it.unisa.c02.rently.rently_application.data.dto.ResponseDTO;
+import it.unisa.c02.rently.rently_application.data.dto.UtenteDTO;
+import it.unisa.c02.rently.rently_application.data.dto.UtenteLoginDTO;
+import it.unisa.c02.rently.rently_application.data.model.Utente;
+import it.unisa.c02.rently.rently_application.security.JwtProvider;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
+
+
+/**
+ * Questa classe gestisce le richieste relative all'autenticazione degli utenti attraverso i servizi forniti da GestioneAutenticazioneService.
+ * Fornisce endpoint RESTful per aggiungere e accedere agli Utenti.
+ * Le risposte vengono restituite nel formato JSON attraverso ResponseEntity&lt;String&gt;, utilizzando le funzionalità
+ * di ResponseService per gestire la costruzione delle risposte standardizzate.
+ */
+@RestController
+<span class="fc" id="L31">@RequiredArgsConstructor</span>
+@RequestMapping(&quot;/api/autenticazione&quot;)
+@CrossOrigin(
+        origins = {
+                &quot;*&quot;,
+        },
+        methods = {
+                RequestMethod.OPTIONS,
+                RequestMethod.GET,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.POST
+        })
+public class GestioneAutenticazioneController {
+
+    /**
+     * Service per la gestione delle risposte alle richieste.
+     */
+    @Autowired
+    ResponseService responseService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneAutenticazioneService autenticazioneService;
+
+    /**
+     * Restituisce l'utente associato all'indirizzo email e alla password specificati nell'UtenteDTO passato come parametro.
+     *
+     * @param data UtenteDTO contenente email e password dell'utente.
+     * @return ResponseEntity contenente l'Utente associato all'indirizzo email e alla password o un messaggio di errore in formato JSON.
+     */
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;String&gt; login(@RequestBody UtenteLoginDTO data) {
+
+<span class="nc" id="L66">        ResponseDTO response = new ResponseDTO();</span>
+<span class="nc" id="L67">        response.message = &quot;Login fallito&quot;;</span>
+
+        try {
+<span class="nc" id="L70">            String oPassword = new PswCoder().codificaPassword(data.getPassword());</span>
+<span class="nc" id="L71">            Utente utente = autenticazioneService.login(data.getEmail(), oPassword);</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">            if (utente != null) {</span>
+
+<span class="nc" id="L74">                UtenteDTO item = new UtenteDTO().convertFromModel(utente);</span>
+
+<span class="nc" id="L76">                ObjectNode userNode = new ObjectMapper().convertValue(item, ObjectNode.class);</span>
+<span class="nc" id="L77">                userNode.remove(&quot;password&quot;);</span>
+<span class="nc" id="L78">                Map claimMap = new HashMap&lt;&gt;(0);</span>
+<span class="nc" id="L79">                claimMap.put(&quot;user&quot;, userNode);</span>
+<span class="nc" id="L80">                item.setToken(JwtProvider.createJwt(item.getEmail(), claimMap));</span>
+
+<span class="nc" id="L82">                return responseService.Ok(item);</span>
+            } else {
+<span class="nc" id="L84">                return responseService.InternalError(response);</span>
+            }
+<span class="nc" id="L86">        } catch (Exception ex)</span>
+        {
+<span class="nc" id="L88">            return responseService.InternalError(response);</span>
+        }
+    }
+
+
+    /**
+     * Aggiunge un nuovo Utente sulla piattaforma se non ne esiste un altro con lo stesso username e la stessa email.
+     *
+     * @param data UtenteDTO contenente i dati dell'Utente da aggiungere alla piattaforma.
+     * @return ResponseEntity contenente l'Utente registrato o un messaggio di errore in formato JSON.
+     */
+    @PostMapping(&quot;/signup&quot;)
+    public ResponseEntity&lt;String&gt; signUp(@RequestBody UtenteDTO data) throws NoSuchAlgorithmException {
+
+<span class="fc" id="L102">        ResponseDTO response = new ResponseDTO();</span>
+<span class="fc" id="L103">        response.message = &quot;&quot;;</span>
+
+
+<span class="fc" id="L106">        HashMap&lt;String, String&gt; tester = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L107">        tester.put(data.getEmail(), &quot;^[A-z0-9._%+-]+@[A-z0-9.-]+\\.[A-z]{1,100}$&quot;);</span>
+<span class="fc" id="L108">        tester.put(data.getUsername(), &quot;^[a-zA-Z0-9.,'-_]{5,100}$&quot;);</span>
+<span class="fc" id="L109">        tester.put(data.getNome(), &quot;^[\\sa-zA-Z0-9.,'èéòàùì]{1,100}$&quot;);</span>
+<span class="fc" id="L110">        tester.put(data.getCognome(), &quot;^[\\sa-zA-Z0-9.,'èéòàùì]{1,100}$&quot;);</span>
+<span class="fc" id="L111">        tester.put(data.getPassword(),&quot;^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$ %^&amp;*-]).{8,}$&quot;);</span>
+
+<span class="fc" id="L113">        RegexTester regexTester = new RegexTester();</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (!regexTester.toTest(tester)) {</span>
+<span class="fc" id="L115">            response.message = &quot;I dati inseriti non sono validi&quot;;</span>
+<span class="fc" id="L116">            return responseService.InternalError(response);</span>
+        }
+
+        try {
+<span class="fc" id="L120">            Utente utente = new Utente();</span>
+<span class="fc" id="L121">            utente.setUsername(data.getUsername());</span>
+<span class="fc" id="L122">            utente.setEmail(data.getEmail());</span>
+<span class="fc" id="L123">            utente.setPassword( new PswCoder().codificaPassword(data.getPassword()));</span>
+<span class="fc" id="L124">            utente.setNome(data.getNome());</span>
+<span class="fc" id="L125">            utente.setCognome(data.getCognome());</span>
+
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">            if(autenticazioneService.checkUsername(utente.getUsername()))</span>
+            {
+<span class="nc" id="L129">                response.message = &quot;Username già esistente!&quot;;</span>
+<span class="nc" id="L130">                return responseService.InternalError(response);</span>
+            }
+
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">            if(autenticazioneService.checkEmail(utente.getEmail()))</span>
+            {
+<span class="nc" id="L135">                response.message = &quot;Email già esistente!&quot;;</span>
+<span class="nc" id="L136">                return responseService.InternalError(response);</span>
+            }
+
+<span class="fc" id="L139">            autenticazioneService.signUp(utente);</span>
+
+<span class="pc bpc" id="L141" title="2 of 4 branches missed.">            if(utente.getUsername().equals(&quot;&quot;) || utente.getPassword().equals(&quot;&quot;))</span>
+            {
+<span class="nc" id="L143">                response.message = &quot;Utente non registrato&quot;;</span>
+<span class="nc" id="L144">                return responseService.InternalError(response);</span>
+            }
+
+<span class="fc" id="L147">            UtenteDTO item = new UtenteDTO().convertFromModel(utente);</span>
+
+<span class="fc" id="L149">            ObjectNode userNode = new ObjectMapper().convertValue(item, ObjectNode.class);</span>
+<span class="fc" id="L150">            userNode.remove(&quot;password&quot;);</span>
+<span class="fc" id="L151">            Map claimMap = new HashMap&lt;&gt;(0);</span>
+<span class="fc" id="L152">            claimMap.put(&quot;user&quot;, userNode);</span>
+<span class="fc" id="L153">            item.setToken(JwtProvider.createJwt(item.getEmail(), claimMap));</span>
+
+<span class="fc" id="L155">            return responseService.Ok(item);</span>
+<span class="nc" id="L156">        } catch (Exception ex)</span>
+        {
+<span class="nc" id="L158">            return responseService.InternalError(response);</span>
+        }
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

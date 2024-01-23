@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GestioneAvvisiController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back-end</a> &gt; <a href="index.source.html" class="el_package">it.unisa.c02.rently.rently_application.business.gestioneAvvisi.controller</a> &gt; <span class="el_source">GestioneAvvisiController.java</span></div><h1>GestioneAvvisiController.java</h1><pre class="source lang-java linenums">package it.unisa.c02.rently.rently_application.business.gestioneAvvisi.controller;
+import it.unisa.c02.rently.rently_application.business.gestioneAnnuncio.service.GestioneAnnuncioService;
+import it.unisa.c02.rently.rently_application.business.gestioneAreaPersonale.service.GestioneAreaPersonaleService;
+import it.unisa.c02.rently.rently_application.business.gestioneAvvisi.service.GestioneAvvisiService;
+import it.unisa.c02.rently.rently_application.business.gestioneNoleggio.service.GestioneNoleggioService;
+import it.unisa.c02.rently.rently_application.commons.mail.EmailService;
+import it.unisa.c02.rently.rently_application.commons.services.regexService.RegexTester;
+import it.unisa.c02.rently.rently_application.commons.services.responseService.ResponseService;
+import it.unisa.c02.rently.rently_application.data.dto.ResponseDTO;
+import it.unisa.c02.rently.rently_application.data.dto.SegnalazioneDTO;
+import it.unisa.c02.rently.rently_application.data.model.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+
+
+/**
+ * Questa classe gestisce le richieste relative alle segnalazioni e alle notifiche attraverso i servizi forniti da
+ * GestioneAvvisiService, GestioneAreaPersonaleService, GestioneAnnuncioService, GestioneNoleggioService,
+ * EmailService e ResponseService.
+ * Fornisce endpoint RESTful per aggiungere segnalazioni e inviare notifiche relative ai noleggi.
+ * Le risposte sono gestite utilizzando il servizio ResponseService per costruire risposte standardizzate in formato JSON.
+ */
+@RestController
+<span class="fc" id="L27">@RequiredArgsConstructor</span>
+@RequestMapping(&quot;/api/avvisi&quot;)
+@CrossOrigin(
+        origins = {
+                &quot;*&quot;,
+        },
+        methods = {
+                RequestMethod.OPTIONS,
+                RequestMethod.GET,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.POST
+        })
+public class GestioneAvvisiController {
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneAvvisiService avvisiService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneAreaPersonaleService areaPersonaleService;
+
+    /**
+     * Service per la gestione delle risposte alle richieste.
+     */
+    private final ResponseService responseService;
+
+    /**
+     * Service per la gestione dell'invio delle mail.
+     */
+    private final EmailService emailService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneAnnuncioService annuncioService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneNoleggioService noleggioService;
+
+
+    /**
+     * Endpoint per aggiungere una segnalazione.
+     *
+     * @param segnalazioneDTO Dati della segnalazione da aggiungere.
+     * @return ResponseEntity contenente l'esito dell'operazione.
+     */
+    @PostMapping(&quot;/aggiungi-segnalazione&quot;)
+    public ResponseEntity&lt;String&gt; aggiungiSegnalazione(@RequestBody SegnalazioneDTO segnalazioneDTO) {
+
+        try {
+            //prendo l'utente dalla sessione con @AuthenticationPrincipal UserDetails userDetails
+            //controllo utente sessione
+<span class="nc" id="L85">            ResponseDTO message = new ResponseDTO();</span>
+<span class="nc" id="L86">            message.message = &quot;Il contenuto inserito non rispetta la regex&quot;;</span>
+
+<span class="nc" id="L88">            HashMap&lt;String, String&gt; tester = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L89">            tester.put(segnalazioneDTO.getContenuto(), &quot;^[\\sa-zA-Z0-9.,:;'-èéòàùì]{1,255}$&quot;);</span>
+
+<span class="nc" id="L91">            RegexTester regexTester = new RegexTester();</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (!regexTester.toTest(tester)) {</span>
+<span class="nc" id="L93">                return responseService.InternalError(message);</span>
+            }
+
+<span class="nc" id="L96">            Segnalazione segnalazione = new Segnalazione();</span>
+<span class="nc" id="L97">            segnalazione.setContenuto(segnalazioneDTO.getContenuto());</span>
+<span class="nc" id="L98">            segnalazione.setTipo(Segnalazione.EnumTipo.valueOf(segnalazioneDTO.getTipo()));</span>
+<span class="nc" id="L99">            Utente user = areaPersonaleService.getDatiPrivati(segnalazioneDTO.getSegnalatore());</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (user != null) {</span>
+<span class="nc" id="L101">                segnalazione.setSegnalatore(user);</span>
+            }
+<span class="nc" id="L103">            Segnalazione nuova = avvisiService.addSegnalazione(segnalazione);</span>
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (nuova.getSegnalatore() != null) {</span>
+<span class="nc" id="L106">                return responseService.Ok(nuova);</span>
+            } else
+<span class="nc" id="L108">                return responseService.InternalError();</span>
+
+<span class="nc" id="L110">        } catch (Exception e) {</span>
+<span class="nc" id="L111">            return responseService.InternalError();</span>
+        }
+    }
+
+
+    /**
+     * Endpoint per inviare una notifica al noleggiatore relativa all'arrivo di una richiesta noleggio.
+     *
+     * @param idNoleggio id del noleggio relativo alla notifica.
+     * @return ResponseEntity contenente l'esito dell'operazione.
+     */
+    @GetMapping(&quot;/notifica-arrivo-richiesta-noleggio&quot;)
+    public ResponseEntity&lt;String&gt; notificaArrivoRichiestaNoleggio(@RequestParam long idNoleggio){
+        try{
+<span class="nc" id="L125">            Noleggio noleggio = noleggioService.getNoleggio(idNoleggio);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            if(noleggio== null){</span>
+<span class="nc" id="L127">                return responseService.InternalError();</span>
+            }
+<span class="nc" id="L129">            Utente noleggiatore= noleggio.getNoleggiatore();</span>
+<span class="nc" id="L130">            Annuncio annuncio = annuncioService.getAnnuncio(noleggio.getAnnuncio().getId()).orElse(null);</span>
+<span class="nc bnc" id="L131" title="All 4 branches missed.">            if(noleggiatore!= null &amp;&amp; annuncio!=null){</span>
+<span class="nc" id="L132">                String subject = &quot;Nuova richiesta di noleggio&quot;;</span>
+<span class="nc" id="L133">                String text = &quot;Salve &quot;+noleggiatore.getUsername()+&quot;,\nhai appena ricevuto una nuova richiesta di noleggio da parte di &quot;+noleggio.getNoleggiante().getUsername()+&quot; per&quot;+</span>
+<span class="nc" id="L134">                        &quot; il tuo annuncio &quot;+annuncio.getNome()+&quot;.\nAccedi a Rently e controlla le tue richieste per saperne di più!&quot;;</span>
+<span class="nc" id="L135">                emailService.sendEmail(noleggiatore.getEmail(), subject,text);</span>
+<span class="nc" id="L136">                return responseService.Ok();</span>
+            }else
+<span class="nc" id="L138">                return responseService.InternalError();</span>
+<span class="nc" id="L139">        }catch(Exception e){</span>
+<span class="nc" id="L140">            return responseService.InternalError();</span>
+        }
+    }
+
+
+    /**
+     * Endpoint per inviare una notifica al noleggiante relativa all'accettazione di una richiesta noleggio.
+     *
+     * @param idNoleggio id del noleggio relativo alla notifica.
+     * @return ResponseEntity contenente l'esito dell'operazione.
+     */
+    @GetMapping(&quot;/notifica-richiesta-noleggio-accettata&quot;)
+    public ResponseEntity&lt;String&gt; notificaRichiestaNoleggioAccettata(@RequestParam long idNoleggio){
+        try{
+<span class="nc" id="L154">            Noleggio noleggio = noleggioService.getNoleggio(idNoleggio);</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if(noleggio== null){</span>
+<span class="nc" id="L156">                return responseService.InternalError();</span>
+            }
+<span class="nc" id="L158">            Utente noleggiante= noleggio.getNoleggiante();</span>
+<span class="nc" id="L159">            Annuncio annuncio = annuncioService.getAnnuncio(noleggio.getAnnuncio().getId()).orElse(null);</span>
+<span class="nc bnc" id="L160" title="All 4 branches missed.">            if(noleggiante!= null &amp;&amp; annuncio!=null){</span>
+<span class="nc" id="L161">                String subject = &quot;Richiesta di noleggio accettata&quot;;</span>
+<span class="nc" id="L162">                String text = &quot;Salve &quot;+noleggiante.getUsername()+&quot;,\nla tua richiesta di noloeggio per l'annuncio &quot;+annuncio.getNome()+&quot; è stata appena accettata!.&quot; +</span>
+                        &quot;\nAccedi a Rently per procedere con il pagamento e dare inizio al periodo di noleggio!&quot;;
+
+<span class="nc" id="L165">                emailService.sendEmail(noleggiante.getEmail(), subject,text);</span>
+<span class="nc" id="L166">                return responseService.Ok();</span>
+            }else
+<span class="nc" id="L168">                return responseService.InternalError();</span>
+<span class="nc" id="L169">        }catch(Exception e){</span>
+<span class="nc" id="L170">            return responseService.InternalError();</span>
+        }
+    }
+
+
+    /**
+     * Endpoint per inviare una notifica al noleggiante relativa al rifiuto di una richiesta noleggio.
+     *
+     * @param idNoleggio id del noleggio relativo alla notifica.
+     * @return ResponseEntity contenente l'esito dell'operazione.
+     */
+    @GetMapping(&quot;/notifica-richiesta-noleggio-rifiutata&quot;)
+    public ResponseEntity&lt;String&gt; notificaRichiestaNoleggioRifiutata(@RequestParam long idNoleggio){
+        try{
+<span class="nc" id="L184">            Noleggio noleggio = noleggioService.getNoleggio(idNoleggio);</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if(noleggio== null){</span>
+<span class="nc" id="L186">                return responseService.InternalError();</span>
+            }
+<span class="nc" id="L188">            Utente noleggiante= noleggio.getNoleggiante();</span>
+<span class="nc" id="L189">            Annuncio annuncio = annuncioService.getAnnuncio(noleggio.getAnnuncio().getId()).orElse(null);</span>
+<span class="nc bnc" id="L190" title="All 4 branches missed.">            if(noleggiante!= null &amp;&amp; annuncio!=null){</span>
+<span class="nc" id="L191">                String subject = &quot;Richiesta di noleggio accettata&quot;;</span>
+<span class="nc" id="L192">                String text = &quot;Salve &quot;+noleggiante.getUsername()+&quot;,\nla tua richiesta di noloeggio per l'annuncio &quot;+annuncio.getNome()+&quot; è stata rifiutata.&quot; +</span>
+                        &quot;\nAccedi a Rently e controlla le tue richieste per saperne di più.&quot;;
+
+<span class="nc" id="L195">                emailService.sendEmail(noleggiante.getEmail(), subject,text);</span>
+<span class="nc" id="L196">                return responseService.Ok();</span>
+            }else
+<span class="nc" id="L198">                return responseService.InternalError();</span>
+<span class="nc" id="L199">        }catch(Exception e){</span>
+<span class="nc" id="L200">            return responseService.InternalError();</span>
+        }
+    }
+
+
+    /**
+     * Endpoint per inviare una notifica al noleggiante e al noleggiatore relativa all'inizio di un noleggio.
+     *
+     * @param idNoleggio id del noleggio relativo alla notifica.
+     * @return ResponseEntity contenente l'esito dell'operazione.
+     */
+    @GetMapping(&quot;/notifica-inizio-noleggio&quot;)
+    public ResponseEntity&lt;String&gt; notificaInizioNoleggio(@RequestParam long idNoleggio){
+        try{
+<span class="nc" id="L214">            Noleggio noleggio = noleggioService.getNoleggio(idNoleggio);</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">            if(noleggio== null){</span>
+<span class="nc" id="L216">                return responseService.InternalError();</span>
+            }
+<span class="nc" id="L218">            Utente noleggiante= noleggio.getNoleggiante();</span>
+<span class="nc" id="L219">            Utente noleggiatore= noleggio.getNoleggiatore();</span>
+<span class="nc" id="L220">            Annuncio annuncio = annuncioService.getAnnuncio(noleggio.getAnnuncio().getId()).orElse(null);</span>
+<span class="nc bnc" id="L221" title="All 6 branches missed.">            if(noleggiante!= null &amp;&amp; noleggiatore!= null &amp;&amp; annuncio!=null){</span>
+<span class="nc" id="L222">                String subject = &quot;Inizio periodo di noleggio&quot;;</span>
+<span class="nc" id="L223">                String textNoleggiante = &quot;Salve &quot;+noleggiante.getUsername()+&quot;,\nil periodo di noleggio per l'oggetto &quot;+annuncio.getNome()+&quot; è appena iniziato.&quot; +</span>
+<span class="nc" id="L224">                        &quot;\nRicordiamo che la scadenza del periodo è prevista per il giorno &quot;+noleggio.getDataFine()+&quot;. Accedi a Rently e controlla i tuoi noleggi per saperne di più.&quot;;</span>
+<span class="nc" id="L225">                String textNoleggiatore = &quot;Salve &quot;+noleggiatore.getUsername()+&quot;,\nil periodo di noleggio per l'oggetto &quot;+annuncio.getNome()+&quot; richiesto da &quot;+noleggiante.getUsername()+&quot; è appena iniziato.&quot; +</span>
+<span class="nc" id="L226">                        &quot;\nRicordiamo che la scadenza del periodo è prevista per il giorno &quot;+noleggio.getDataFine()+&quot;. Accedi a Rently e controlla i tuoi noleggi per saperne di più.&quot;;</span>
+
+<span class="nc" id="L228">                emailService.sendEmail(noleggiante.getEmail(), subject,textNoleggiante);</span>
+<span class="nc" id="L229">                emailService.sendEmail(noleggiatore.getEmail(), subject,textNoleggiatore);</span>
+<span class="nc" id="L230">                return responseService.Ok();</span>
+            }else
+<span class="nc" id="L232">                return responseService.InternalError();</span>
+<span class="nc" id="L233">        }catch(Exception e){</span>
+<span class="nc" id="L234">            return responseService.InternalError();</span>
+        }
+    }
+
+
+    /**
+     * Endpoint per inviare una notifica al noleggiante e al noleggiatore relativa alla fine di un noleggio.
+     *
+     * @param idNoleggio id del noleggio relativo alla notifica.
+     * @return ResponseEntity contenente l'esito dell'operazione.
+     */
+    @GetMapping(&quot;/notifica-fine-noleggio&quot;)
+    public ResponseEntity&lt;String&gt; notificaFineNoleggio(@RequestParam long idNoleggio){
+        try{
+<span class="nc" id="L248">            Noleggio noleggio = noleggioService.getNoleggio(idNoleggio);</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">            if(noleggio== null){</span>
+<span class="nc" id="L250">                return responseService.InternalError();</span>
+            }
+<span class="nc" id="L252">            Utente noleggiante= noleggio.getNoleggiante();</span>
+<span class="nc" id="L253">            Utente noleggiatore= noleggio.getNoleggiatore();</span>
+<span class="nc" id="L254">            Annuncio annuncio = annuncioService.getAnnuncio(noleggio.getAnnuncio().getId()).orElse(null);</span>
+<span class="nc bnc" id="L255" title="All 6 branches missed.">            if(noleggiante!= null &amp;&amp; noleggiatore!= null &amp;&amp; annuncio!=null){</span>
+<span class="nc" id="L256">                String subject = &quot;Fine periodo di noleggio&quot;;</span>
+<span class="nc" id="L257">                String textNoleggiante = &quot;Salve &quot;+noleggiante.getUsername()+&quot;,\nil periodo di noleggio per l'oggetto &quot;+annuncio.getNome()+&quot; è terminato.&quot; +</span>
+                        &quot;\nTi invitiamo a condividere la tua esperienza lasciando una valutazione sul proprietario e sull'oggetto noleggiato. Accedi a Rently e controlla i tuoi noleggi per saperne di più.&quot;;
+<span class="nc" id="L259">                String textNoleggiatore = &quot;Salve &quot;+noleggiatore.getUsername()+&quot;,\nil periodo di noleggio per l'oggetto &quot;+annuncio.getNome()+&quot; richiesto da &quot;+noleggiante.getUsername()+&quot; è terminato.&quot; +</span>
+<span class="nc" id="L260">                        &quot;\nTi invitiamo a condividere la tua esperienza lasciando una valutazione su &quot;+noleggiante.getUsername()+&quot;. Accedi a Rently e controlla i tuoi noleggi per saperne di più.&quot;;</span>
+
+<span class="nc" id="L262">                emailService.sendEmail(noleggiante.getEmail(), subject,textNoleggiante);</span>
+<span class="nc" id="L263">                emailService.sendEmail(noleggiatore.getEmail(), subject,textNoleggiatore);</span>
+<span class="nc" id="L264">                return responseService.Ok();</span>
+            }else
+<span class="nc" id="L266">                return responseService.InternalError();</span>
+<span class="nc" id="L267">        }catch(Exception e){</span>
+<span class="nc" id="L268">            return responseService.InternalError();</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GestioneNoleggioController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back-end</a> &gt; <a href="index.source.html" class="el_package">it.unisa.c02.rently.rently_application.business.gestioneNoleggio.controller</a> &gt; <span class="el_source">GestioneNoleggioController.java</span></div><h1>GestioneNoleggioController.java</h1><pre class="source lang-java linenums">package it.unisa.c02.rently.rently_application.business.gestioneNoleggio.controller;
+
+import it.unisa.c02.rently.rently_application.business.gestioneAnnuncio.service.GestioneAnnuncioService;
+import it.unisa.c02.rently.rently_application.business.gestioneAreaPersonale.service.GestioneAreaPersonaleService;
+import it.unisa.c02.rently.rently_application.business.gestioneNoleggio.service.GestioneNoleggioService;
+import it.unisa.c02.rently.rently_application.business.gestioneValutazione.service.GestioneValutazioneService;
+import it.unisa.c02.rently.rently_application.commons.services.responseService.ResponseService;
+import it.unisa.c02.rently.rently_application.data.dto.NoleggioDTO;
+import it.unisa.c02.rently.rently_application.data.model.Annuncio;
+import it.unisa.c02.rently.rently_application.data.model.Noleggio;
+import it.unisa.c02.rently.rently_application.data.model.Utente;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Questa classe gestisce le richieste relative ai noleggi attraverso i servizi forniti da GestioneAreaPersonaleService,
+ * GestioneAnnuncioService, GestioneNoleggioService, GestioneValutazioneService e ResponseService.
+ * Fornisce endpoint RESTful per accedere e aggiungere noleggi sulla piattaforma.
+ * Le risposte vengono restituite nel formato JSON attraverso ResponseEntity&lt;String&gt;, utilizzando le funzionalità
+ * di ResponseService per gestire la costruzione delle risposte standardizzate.
+ */
+@RestController
+<span class="fc" id="L28">@RequiredArgsConstructor</span>
+@RequestMapping(&quot;/api/noleggio&quot;)
+@CrossOrigin(
+        origins = {
+                &quot;*&quot;,
+        },
+        methods = {
+                RequestMethod.OPTIONS,
+                RequestMethod.GET,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.POST
+        })
+public class GestioneNoleggioController {
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneNoleggioService noleggioService;
+
+    /**
+     * Service per la gestione delle risposte alle richieste.
+     */
+    private final ResponseService responseService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneAreaPersonaleService areaPersonaleService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneAnnuncioService annuncioService;
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneValutazioneService valutazioneService;
+
+
+    /**
+     * Restituisce tutti i noleggi, eccetto le richieste, effettuati da un noleggiante passato come parametro.
+     *
+     * @param idUtente ID del noleggiante di cui si vogliono ricevere i noleggi.
+     * @return ResponseEntity contenente la lista dei noleggi del noleggiante o un messaggio di errore in formato JSON.
+     */
+    @GetMapping(&quot;/noleggiante&quot;)
+    public ResponseEntity&lt;String&gt; getNoleggiByNoleggiante(@RequestParam long idUtente) {
+
+<span class="nc" id="L78">        Utente noleggiante = areaPersonaleService.getDatiPrivati(idUtente);</span>
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if(noleggiante!=null){</span>
+<span class="nc" id="L81">            List&lt;Noleggio&gt; noleggi = noleggioService.getNoleggiByNoleggiante(noleggiante);</span>
+<span class="nc" id="L82">            List&lt;NoleggioDTO&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            for (Noleggio n: noleggi) {</span>
+<span class="nc" id="L84">                NoleggioDTO item = new NoleggioDTO().convertFromModel(n);</span>
+<span class="nc" id="L85">                item.setValutazioneAlNoleggiatore(valutazioneService.valutazioneNoleggiatoreIsPresent(n));</span>
+<span class="nc" id="L86">                item.setValutazioneAnnuncio(valutazioneService.valutazioneAnnuncioIsPresent(n));</span>
+<span class="nc" id="L87">                item.setValutazioneAlNoleggiante(valutazioneService.valutazioneNoleggianteIsPresent(n));</span>
+<span class="nc bnc" id="L88" title="All 6 branches missed.">                if(item.isValutazioneAlNoleggiante() &amp;&amp; item.isValutazioneAlNoleggiatore() &amp;&amp; item.isValutazioneAnnuncio()){</span>
+
+<span class="nc" id="L90">                    item.setStato(&quot;CONCLUSOCONVALUTAZIONE&quot;);</span>
+                }
+
+<span class="nc" id="L93">                list.add(item);</span>
+<span class="nc" id="L94">            }</span>
+<span class="nc" id="L95">            return responseService.Ok(list);</span>
+        }
+        else
+<span class="nc" id="L98">            return responseService.InternalError();</span>
+    }
+
+    /**
+     * Restituisce tutti i noleggi, eccetto le richieste, effettuati da un noleggiatore passato come parametro.
+     *
+     * @param idUtente ID del noleggiatore di cui si vogliono ricevere i noleggi.
+     * @return ResponseEntity contenente la lista dei noleggi del noleggiatore o un messaggio di errore in formato JSON.
+     */
+    @GetMapping(&quot;/noleggiatore&quot;)
+    public ResponseEntity&lt;String&gt; getNoleggiByNoleggiatore(@RequestParam long idUtente) {
+
+<span class="nc" id="L110">        Utente noleggiatore = areaPersonaleService.getDatiPrivati(idUtente);</span>
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if(noleggiatore!=null){</span>
+<span class="nc" id="L113">            List&lt;Noleggio&gt; noleggi = noleggioService.getNoleggiByNoleggiatore(noleggiatore);</span>
+<span class="nc" id="L114">            List&lt;NoleggioDTO&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            for (Noleggio n: noleggi) {</span>
+<span class="nc" id="L116">                NoleggioDTO item = new NoleggioDTO().convertFromModel(n);</span>
+<span class="nc" id="L117">                item.setValutazioneAlNoleggiatore(valutazioneService.valutazioneNoleggiatoreIsPresent(n));</span>
+<span class="nc" id="L118">                item.setValutazioneAnnuncio(valutazioneService.valutazioneAnnuncioIsPresent(n));</span>
+<span class="nc" id="L119">                item.setValutazioneAlNoleggiante(valutazioneService.valutazioneNoleggianteIsPresent(n));</span>
+<span class="nc bnc" id="L120" title="All 6 branches missed.">                if(item.isValutazioneAlNoleggiante() &amp;&amp; item.isValutazioneAlNoleggiatore() &amp;&amp; item.isValutazioneAnnuncio()){</span>
+
+<span class="nc" id="L122">                    item.setStato(&quot;CONCLUSOCONVALUTAZIONE&quot;);</span>
+                }
+<span class="nc" id="L124">                list.add(item);</span>
+<span class="nc" id="L125">            }</span>
+<span class="nc" id="L126">            return responseService.Ok(list);</span>
+        }
+        else
+<span class="nc" id="L129">            return responseService.InternalError();</span>
+    }
+
+    /**
+     * Restituisce tutte le richieste, anche in stato RIFIUTATA e ACCETTATA, effettuate da un noleggiante passato come parametro.
+     *
+     * @param idUtente ID del noleggiante di cui si vogliono ricevere le richieste.
+     * @return ResponseEntity contenente la lista delle richieste del noleggiante o un messaggio di errore in formato JSON.
+     */
+    @GetMapping(&quot;/richieste/noleggiante&quot;)
+    public ResponseEntity&lt;String&gt; getRichiesteByNoleggiante(@RequestParam long idUtente) {
+
+<span class="fc" id="L141">        Utente noleggiante = areaPersonaleService.getDatiPrivati(idUtente);</span>
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if(noleggiante!=null){</span>
+<span class="fc" id="L144">            List&lt;Noleggio&gt; noleggi = noleggioService.getRichiesteByNoleggiante(noleggiante);</span>
+<span class="fc" id="L145">            List&lt;NoleggioDTO&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            for (Noleggio n: noleggi) {</span>
+<span class="fc" id="L147">                NoleggioDTO item = new NoleggioDTO().convertFromModel(n);</span>
+<span class="fc" id="L148">                list.add(item);</span>
+<span class="fc" id="L149">            }</span>
+<span class="fc" id="L150">            return responseService.Ok(list);</span>
+        }
+        else
+<span class="fc" id="L153">            return responseService.InternalError();</span>
+    }
+
+    /**
+     * Restituisce tutte le richieste, anche in stato RIFIUTATA e ACCETTATA, effettuate da un noleggiatore passato come parametro.
+     *
+     * @param idUtente ID del noleggiatore di cui si vogliono ricevere le richieste.
+     * @return ResponseEntity contenente la lista delle richieste del noleggiatore o un messaggio di errore in formato JSON.
+     */
+    @GetMapping(&quot;/richieste/noleggiatore&quot;)
+    public ResponseEntity&lt;String&gt; getRichiesteByNoleggiatore(@RequestParam long idUtente) {
+
+<span class="nc" id="L165">        Utente noleggiatore = areaPersonaleService.getDatiPrivati(idUtente);</span>
+
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if(noleggiatore!=null){</span>
+<span class="nc" id="L168">            List&lt;Noleggio&gt; noleggi = noleggioService.getRichiesteByNoleggiatore(noleggiatore);</span>
+<span class="nc" id="L169">            List&lt;NoleggioDTO&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            for (Noleggio n: noleggi) {</span>
+<span class="nc" id="L171">                NoleggioDTO item = new NoleggioDTO().convertFromModel(n);</span>
+<span class="nc" id="L172">                list.add(item);</span>
+<span class="nc" id="L173">            }</span>
+<span class="nc" id="L174">            return responseService.Ok(list);</span>
+        }
+        else
+<span class="nc" id="L177">            return responseService.InternalError();</span>
+    }
+
+    /**
+     * Restituisce le informazioni di un noleggio specifico in base all'identificativo.
+     *
+     * @param idNoleggio Identificativo del noleggio da visualizzare.
+     * @return ResponseEntity contenente le informazioni del noleggio o un messaggio di errore in formato JSON.
+     */
+    @GetMapping(&quot;/visualizza-noleggio&quot;)
+    public ResponseEntity&lt;String&gt; getNoleggio(@RequestParam long idNoleggio) {
+
+        try {
+<span class="nc" id="L190">            Noleggio noleggio = noleggioService.getNoleggio(idNoleggio);</span>
+<span class="nc" id="L191">            NoleggioDTO item = new NoleggioDTO().convertFromModel(noleggio);</span>
+
+<span class="nc" id="L193">            return responseService.Ok(item);</span>
+
+<span class="nc" id="L195">        } catch (Exception ex)</span>
+        {
+<span class="nc" id="L197">            return responseService.InternalError();</span>
+        }
+    }
+
+    /**
+     * Aggiunge un nuovo noleggio alla piattaforma.
+     *
+     * @param data NoleggioDTO contenente le informazioni del noleggio.
+     * @return ResponseEntity contenente le informazioni del noleggio aggiunto o un messaggio di errore in formato JSON.
+     */
+    @PostMapping(&quot;/aggiungi-noleggio&quot;)
+    public ResponseEntity&lt;String&gt; aggiungiNoleggio(@RequestBody NoleggioDTO data){
+
+        try {
+
+<span class="nc" id="L212">            Annuncio annuncio = annuncioService.getAnnuncio(data.getAnnuncio()).orElse(null);</span>
+
+<span class="nc" id="L214">            List&lt;Noleggio&gt; list = noleggioService.checkDisponibilita(annuncio,</span>
+<span class="nc" id="L215">                    Date.valueOf(data.getDataInizio()),</span>
+<span class="nc" id="L216">                    Date.valueOf(data.getDataFine()));</span>
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if(Date.valueOf(data.getDataFine()).after(annuncio.getDataFine()))</span>
+            {
+<span class="nc" id="L220">                return responseService.InternalError();</span>
+            }
+
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            if (list.isEmpty()) {</span>
+<span class="nc" id="L224">                Noleggio item = new Noleggio();</span>
+<span class="nc" id="L225">                item.setStato(Noleggio.EnumStato.RICHIESTA);</span>
+<span class="nc" id="L226">                item.setPrezzoTotale(data.getPrezzoTotale());</span>
+<span class="nc" id="L227">                item.setDataInizio(Date.valueOf(data.getDataInizio()));</span>
+<span class="nc" id="L228">                item.setDataFine(Date.valueOf(data.getDataFine()));</span>
+<span class="nc" id="L229">                item.setDataRichiesta(Date.valueOf(data.getDataRichiesta()));</span>
+<span class="nc" id="L230">                item.setNoleggiante(areaPersonaleService.getDatiPrivati(data.getNoleggiante()));</span>
+<span class="nc" id="L231">                item.setNoleggiatore(areaPersonaleService.getDatiPrivati(data.getNoleggiatore()));</span>
+<span class="nc" id="L232">                item.setAnnuncio(annuncioService.getAnnuncio(data.getAnnuncio()).orElse(null));</span>
+
+<span class="nc bnc" id="L234" title="All 6 branches missed.">                if (item.getNoleggiante() != null &amp;&amp; item.getNoleggiatore() != null &amp;&amp; item.getAnnuncio() != null) {</span>
+<span class="nc" id="L235">                    item = noleggioService.addNoleggio(item);</span>
+
+<span class="nc" id="L237">                    NoleggioDTO noleggioDto = new NoleggioDTO().convertFromModel(item);</span>
+
+<span class="nc" id="L239">                    return responseService.Ok(noleggioDto);</span>
+                } else
+<span class="nc" id="L241">                    return responseService.InternalError();</span>
+            } else
+<span class="nc" id="L243">                return responseService.InternalError();</span>
+        }
+<span class="nc" id="L245">        catch (Exception ex) {</span>
+<span class="nc" id="L246">            return responseService.InternalError();</span>
+        }
+    }
+
+
+    /**
+     * Modofica un noleggio presente sulla piattaforma.
+     *
+     * @param data NoleggioDTO contenente le informazioni del noleggio modificate.
+     * @return ResponseEntity contenente le informazioni del noleggio modificato o un messaggio di errore in formato JSON.
+     */
+    @PostMapping(&quot;/salva-noleggio&quot;)
+    public ResponseEntity&lt;String&gt; salvaNoleggio(@RequestBody NoleggioDTO data){
+
+<span class="nc" id="L260">        Noleggio item = noleggioService.getNoleggio(data.getId());</span>
+<span class="nc" id="L261">        item.setStato(Noleggio.EnumStato.valueOf(data.getStato()));</span>
+<span class="nc" id="L262">        item.setPrezzoTotale(data.getPrezzoTotale());</span>
+<span class="nc" id="L263">        item.setDataInizio(Date.valueOf(data.getDataInizio()));</span>
+<span class="nc" id="L264">        item.setDataFine(Date.valueOf(data.getDataFine()));</span>
+<span class="nc" id="L265">        item.setDataRichiesta(Date.valueOf(data.getDataRichiesta()));</span>
+<span class="nc" id="L266">        item.setNoleggiante(areaPersonaleService.getDatiPrivati(data.getNoleggiante()));</span>
+<span class="nc" id="L267">        item.setNoleggiatore(areaPersonaleService.getDatiPrivati(data.getNoleggiatore()));</span>
+<span class="nc" id="L268">        item.setAnnuncio(annuncioService.getAnnuncio(data.getAnnuncio()).orElse(null));</span>
+
+<span class="nc bnc" id="L270" title="All 6 branches missed.">        if(item.getNoleggiante() != null &amp;&amp; item.getNoleggiatore()!= null &amp;&amp; item.getAnnuncio() != null){</span>
+<span class="nc" id="L271">            item = noleggioService.updateStatoNoleggio(item);</span>
+
+<span class="nc" id="L273">            NoleggioDTO noleggioDTO = new NoleggioDTO().convertFromModel(item);</span>
+<span class="nc" id="L274">            return responseService.Ok(noleggioDTO);</span>
+        }
+        else
+<span class="nc" id="L277">            return responseService.InternalError();</span>
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

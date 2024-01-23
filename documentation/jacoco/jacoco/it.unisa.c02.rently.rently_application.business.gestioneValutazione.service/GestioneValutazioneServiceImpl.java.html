@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GestioneValutazioneServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back-end</a> &gt; <a href="index.source.html" class="el_package">it.unisa.c02.rently.rently_application.business.gestioneValutazione.service</a> &gt; <span class="el_source">GestioneValutazioneServiceImpl.java</span></div><h1>GestioneValutazioneServiceImpl.java</h1><pre class="source lang-java linenums">package it.unisa.c02.rently.rently_application.business.gestioneValutazione.service;
+
+
+import it.unisa.c02.rently.rently_application.data.dao.GestioneValutazioneOggettoDAO;
+import it.unisa.c02.rently.rently_application.data.dao.GestioneValutazioneUtenteDAO;
+import it.unisa.c02.rently.rently_application.data.model.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * Implementazione del servizio di gestione della valutazione.
+ * Questa classe fornisce implementazioni concrete per i metodi dichiarati nell'interfaccia GestioneValutazioneService.
+ */
+@Service
+<span class="fc" id="L17">@RequiredArgsConstructor</span>
+public class GestioneValutazioneServiceImpl implements GestioneValutazioneService {
+
+    /**
+     * L'istanza di GestioneValutazioneUtenteDAO utilizzata per l'accesso ai dati delle valutazioni di utenti.
+     */
+    private final GestioneValutazioneUtenteDAO valutazioneUtenteDAO;
+
+    /**
+     * L'istanza di GestioneValutazioneOggettoDAO utilizzata per l'accesso ai dati delle valutazioni di oggetti.
+     */
+    private final GestioneValutazioneOggettoDAO valutazioneOggettoDAO;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ValutazioneUtente addValutazioneUtente (ValutazioneUtente valutazione){
+<span class="nc" id="L35">        return valutazioneUtenteDAO.save(valutazione);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteValutazioneUtente(ValutazioneUtente valutazione) {
+<span class="nc" id="L43">        valutazioneUtenteDAO.deleteById(valutazione.getId());</span>
+<span class="nc" id="L44">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List&lt;ValutazioneUtente&gt; findAllByUtente(Utente valutato) {
+<span class="nc" id="L51">        return valutazioneUtenteDAO.findByValutato(valutato);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double mediaValutazioniUtenteByUtente(Utente valutato) {
+<span class="nc" id="L59">        return valutazioneUtenteDAO.mediaValutazioniUtenteById(valutato.getId());</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ValutazioneOggetto addValutazioneOggetto(ValutazioneOggetto valutazione) {
+<span class="nc" id="L67">        return valutazioneOggettoDAO.save(valutazione);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteValutazioneOggetto(ValutazioneOggetto valutazione) {
+<span class="nc" id="L75">        valutazioneOggettoDAO.deleteById(valutazione.getId());</span>
+<span class="nc" id="L76">    }</span>
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List&lt;ValutazioneOggetto&gt; findAllByAnnuncio(Annuncio annuncio) {
+<span class="nc" id="L83">        return valutazioneOggettoDAO.findByAnnuncio(annuncio);</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double mediaValutazioniOggettoByAnnuncio(Annuncio annuncio) {
+<span class="nc" id="L91">        return valutazioneOggettoDAO.mediaValutazioniOggettoById(annuncio.getId());</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean valutazioneNoleggianteIsPresent(Noleggio n) {
+
+<span class="nc" id="L100">        ValutazioneUtente valutazione = valutazioneUtenteDAO.valutazioneNoleggianteIsPresent(n.getId());</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        return valutazione != null;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean valutazioneNoleggiatoreIsPresent(Noleggio n) {
+
+<span class="nc" id="L110">        ValutazioneUtente valutazione = valutazioneUtenteDAO.valutazioneNoleggiatoreIsPresent(n.getId());</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        return valutazione != null;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean valutazioneAnnuncioIsPresent(Noleggio n) {
+
+<span class="nc" id="L120">        ValutazioneOggetto valutazione = valutazioneOggettoDAO.valutazioneAnnuncioIsPresent(n.getId());</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        return valutazione != null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

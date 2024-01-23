@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GestioneRicercaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back-end</a> &gt; <a href="index.source.html" class="el_package">it.unisa.c02.rently.rently_application.business.gestioneRicerca.controller</a> &gt; <span class="el_source">GestioneRicercaController.java</span></div><h1>GestioneRicercaController.java</h1><pre class="source lang-java linenums">package it.unisa.c02.rently.rently_application.business.gestioneRicerca.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.gson.Gson;
+import it.unisa.c02.rently.rently_application.business.gestioneRicerca.service.GestioneRicercaService;
+import it.unisa.c02.rently.rently_application.commons.jsonHelper.JsonHelper;
+import it.unisa.c02.rently.rently_application.commons.services.responseService.ResponseService;
+import it.unisa.c02.rently.rently_application.commons.services.storageService.FilesStorageService;
+import it.unisa.c02.rently.rently_application.data.dto.AnnuncioDTO;
+import it.unisa.c02.rently.rently_application.data.model.Annuncio;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.lang.reflect.Array;
+import java.util.*;
+
+/**
+ * Questa classe gestisce le richieste di ricerca di annunci attraverso i servizi offerti da GestioneRicercaService.
+ * Fornisce endpoint RESTful per cercare annunci in base a diversi criteri.
+ * Le risposte vengono restituite nel formato JSON attraverso ResponseEntity&lt;String&gt;, utilizzando le funzionalità di
+ * ResponseService per gestire la costruzione delle risposte standardizzate.
+ */
+@RestController
+<span class="fc" id="L29">@RequiredArgsConstructor</span>
+@RequestMapping(&quot;/api/ricerca&quot;)
+@CrossOrigin(
+        origins = {
+                &quot;*&quot;,
+        },
+        methods = {
+                RequestMethod.OPTIONS,
+                RequestMethod.GET,
+                RequestMethod.PUT,
+                RequestMethod.DELETE,
+                RequestMethod.POST
+        })
+public class GestioneRicercaController {
+
+    /**
+     * Service per effettuare le operazioni di persistenza.
+     */
+    private final GestioneRicercaService ricercaService;
+
+    /**
+     * Service per la gestione delle risposte alle richieste.
+     */
+    private final ResponseService responseService;
+
+    /**
+     * Oggetto HttpServletRequest per ottenere informazioni sulla richiesta HTTP corrente.
+     */
+    private final HttpServletRequest httpServletRequest;
+
+    /**
+     * Restituisce una lista di annunci che corrispondono alla categoria specificata.
+     *
+     * @param categoria Categoria degli annunci da cercare.
+     * @return ResponseEntity contenente la lista di annunci nel formato JSON.
+     */
+    @GetMapping(&quot;/categoria&quot;)
+    public ResponseEntity&lt;String&gt;  searchByCategoria(@RequestParam String categoria) {
+<span class="nc" id="L67">        List&lt;Annuncio&gt; annunci = ricercaService.searchByCategoria(categoria);</span>
+<span class="nc" id="L68">        List&lt;AnnuncioDTO&gt; list = new ArrayList&lt;AnnuncioDTO&gt;();</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        for (Annuncio a: annunci) {</span>
+<span class="nc" id="L70">            AnnuncioDTO item = new AnnuncioDTO().convertFromModel(a);</span>
+<span class="nc" id="L71">            list.add(item);</span>
+<span class="nc" id="L72">        }</span>
+<span class="nc" id="L73">        return responseService.Ok(list);</span>
+    }
+
+    /**
+     * Restituisce una lista di annunci che corrispondono alla condizione specificata.
+     *
+     * @param condizione Condizione degli annunci da cercare.
+     * @return ResponseEntity contenente la lista di annunci nel formato JSON.
+     */
+    @GetMapping(&quot;/condizione&quot;)
+    public ResponseEntity&lt;String&gt; searchByCondizione(@RequestParam String condizione) {
+<span class="nc" id="L84">        List&lt;Annuncio&gt; annunci = ricercaService.searchByCondizione(condizione);</span>
+<span class="nc" id="L85">        List&lt;AnnuncioDTO&gt; list = new ArrayList&lt;AnnuncioDTO&gt;();</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        for (Annuncio a: annunci) {</span>
+<span class="nc" id="L87">            AnnuncioDTO item = new AnnuncioDTO().convertFromModel(a);</span>
+<span class="nc" id="L88">            list.add(item);</span>
+<span class="nc" id="L89">        }</span>
+<span class="nc" id="L90">        return responseService.Ok(list);</span>
+    }
+
+    /**
+     * Restituisce una lista di annunci pubblicati tra le date specificate.
+     *
+     * @param inizio Data di inizio periodo di ricerca.
+     * @param fine Data di fine periodo di ricerca.
+     * @return ResponseEntity contenente la lista di annunci nel formato JSON.
+     */
+    @GetMapping(&quot;/data&quot;)
+    public ResponseEntity&lt;String&gt; searchByData(@RequestParam Date inizio, @RequestParam Date fine) {
+<span class="nc" id="L102">        List&lt;Annuncio&gt; annunci = ricercaService.searchByData(inizio, fine);</span>
+<span class="nc" id="L103">        List&lt;AnnuncioDTO&gt; list = new ArrayList&lt;AnnuncioDTO&gt;();</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        for (Annuncio a: annunci) {</span>
+<span class="nc" id="L105">            AnnuncioDTO item = new AnnuncioDTO().convertFromModel(a);</span>
+<span class="nc" id="L106">            list.add(item);</span>
+<span class="nc" id="L107">        }</span>
+<span class="nc" id="L108">        return responseService.Ok(list);</span>
+    }
+
+    /**
+     * Restituisce una lista di annunci che contengono la descrizione specificata.
+     *
+     * @param descrizione Descrizione da cercare negli annunci.
+     * @return ResponseEntity contenente la lista di annunci nel formato JSON.
+     */
+    @GetMapping(&quot;/descrizione&quot;)
+    public ResponseEntity&lt;String&gt; searchByDescrizione(@RequestParam String descrizione) {
+<span class="nc" id="L119">        List&lt;Annuncio&gt; annunci =  ricercaService.searchByDescrizione(descrizione);</span>
+<span class="nc" id="L120">        List&lt;AnnuncioDTO&gt; list = new ArrayList&lt;AnnuncioDTO&gt;();</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        for (Annuncio a: annunci) {</span>
+<span class="nc" id="L122">            AnnuncioDTO item = new AnnuncioDTO().convertFromModel(a);</span>
+<span class="nc" id="L123">            list.add(item);</span>
+<span class="nc" id="L124">        }</span>
+<span class="nc" id="L125">        return responseService.Ok(list);</span>
+    }
+
+    /**
+     * Restituisce una lista di tutti gli annunci presenti sulla piattaforma.
+     *
+     * @return ResponseEntity contenente la lista di annunci nel formato JSON.
+     */
+    @GetMapping(&quot;/all&quot;)
+    public ResponseEntity&lt;String&gt; searchAll() {
+<span class="nc" id="L135">        List&lt;Annuncio&gt; annunci =  ricercaService.searchAll();</span>
+<span class="nc" id="L136">        List&lt;AnnuncioDTO&gt; list = new ArrayList&lt;AnnuncioDTO&gt;();</span>
+
+<span class="nc" id="L138">        String serverAddress = String.format(</span>
+                &quot;%s://%s:%d&quot;,
+<span class="nc" id="L140">                httpServletRequest.getScheme(),</span>
+<span class="nc" id="L141">                httpServletRequest.getServerName(),</span>
+<span class="nc" id="L142">                httpServletRequest.getServerPort());</span>
+
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        for (Annuncio a: annunci) {</span>
+<span class="nc" id="L145">            AnnuncioDTO item = new AnnuncioDTO().convertFromModel(a);</span>
+<span class="nc" id="L146">            item.setServerImage(a, serverAddress);</span>
+<span class="nc" id="L147">            list.add(item);</span>
+<span class="nc" id="L148">        }</span>
+
+<span class="nc" id="L150">        return responseService.Ok(list);</span>
+    }
+
+    /**
+     * Restituisce una lista di annunci di utenti premium presenti sulla piattaforma.
+     *
+     * @return ResponseEntity contenente la lista di annunci di utenti premium nel formato JSON.
+     */
+    @GetMapping(&quot;/premium&quot;)
+    public ResponseEntity&lt;String&gt; searchAnnunciPremium() {
+<span class="nc" id="L160">        List&lt;Annuncio&gt; annunci =  ricercaService.searchAnnunciPremium();</span>
+<span class="nc" id="L161">        List&lt;AnnuncioDTO&gt; list = new ArrayList&lt;AnnuncioDTO&gt;();</span>
+
+<span class="nc" id="L163">        String serverAddress = String.format(</span>
+                &quot;%s://%s:%d&quot;,
+<span class="nc" id="L165">                httpServletRequest.getScheme(),</span>
+<span class="nc" id="L166">                httpServletRequest.getServerName(),</span>
+<span class="nc" id="L167">                httpServletRequest.getServerPort());</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        for (Annuncio a: annunci) {</span>
+<span class="nc" id="L170">            AnnuncioDTO item = new AnnuncioDTO().convertFromModel(a);</span>
+<span class="nc" id="L171">            item.setServerImage(a, serverAddress);</span>
+<span class="nc" id="L172">            list.add(item);</span>
+<span class="nc" id="L173">        }</span>
+
+<span class="nc" id="L175">        return responseService.Ok(list);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
